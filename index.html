@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>TalentScout AI — Catalyst Hackathon</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f0;color:#1a1a1a;min-height:100vh}
+.app{max-width:960px;margin:0 auto;padding:16px}
+
+/* Header */
+.header{background:white;border:1px solid #e8e8e4;border-radius:12px;padding:16px 20px;display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.logo{width:36px;height:36px;background:#1D9E75;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.logo svg{width:20px;height:20px;fill:white}
+.header h1{font-size:18px;font-weight:600;color:#1a1a1a}
+.header p{font-size:12px;color:#888;margin-top:1px}
+.header-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.api-key-input{font-size:12px;padding:7px 12px;border:1px solid #e0e0e0;border-radius:8px;width:220px;color:#333;background:#fafafa}
+.api-key-input:focus{outline:none;border-color:#1D9E75}
+.badge{background:#E1F5EE;color:#085041;font-size:11px;padding:3px 10px;border-radius:20px;border:1px solid #9FE1CB;white-space:nowrap}
+
+/* Steps nav */
+.steps{display:flex;gap:0;background:white;border:1px solid #e8e8e4;border-radius:12px;padding:6px;margin-bottom:16px;overflow-x:auto}
+.step{display:flex;align-items:center;gap:8px;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:13px;color:#888;transition:all .15s;white-space:nowrap;border:none;background:none;font-family:inherit}
+.step.active{background:#E1F5EE;color:#085041;font-weight:500}
+.step.done{color:#1D9E75}
+.step-num{width:22px;height:22px;border-radius:50%;border:1.5px solid currentColor;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0}
+.step.active .step-num{background:#1D9E75;border-color:#1D9E75;color:white}
+.step.done .step-num{background:#1D9E75;border-color:#1D9E75;color:white}
+
+/* Panels */
+.panel{background:white;border:1px solid #e8e8e4;border-radius:12px;padding:20px}
+.panel-title{font-size:14px;font-weight:600;color:#1a1a1a;margin-bottom:4px}
+.panel-sub{font-size:12px;color:#888;margin-bottom:16px}
+
+/* Forms */
+textarea{width:100%;padding:12px;border:1px solid #e0e0e0;border-radius:8px;font-size:13px;font-family:inherit;resize:vertical;color:#333;background:#fafafa;line-height:1.6}
+textarea:focus{outline:none;border-color:#1D9E75;background:white}
+.btn{padding:9px 18px;border-radius:8px;font-size:13px;cursor:pointer;font-weight:500;border:none;font-family:inherit;transition:all .15s}
+.btn-primary{background:#1D9E75;color:white}
+.btn-primary:hover{background:#0F6E56}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed}
+.btn-secondary{background:white;color:#1D9E75;border:1.5px solid #1D9E75}
+.btn-secondary:hover{background:#E1F5EE}
+.btn-row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+
+/* Tags */
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
+.tag{font-size:11px;padding:3px 10px;border-radius:20px;border:1px solid}
+.tag-skill{background:#E1F5EE;color:#085041;border-color:#5DCAA5}
+.tag-exp{background:#FAEEDA;color:#633806;border-color:#EF9F27}
+.tag-role{background:#E6F1FB;color:#0C447C;border-color:#85B7EB}
+.tag-loc{background:#EEEDFE;color:#3C3489;border-color:#AFA9EC}
+
+/* Progress */
+.progress-wrap{margin:12px 0}
+.progress-bar{height:4px;background:#eee;border-radius:2px;overflow:hidden}
+.progress-fill{height:100%;background:#1D9E75;border-radius:2px;transition:width .4s}
+.progress-label{font-size:11px;color:#888;margin-top:5px}
+
+/* Metrics */
+.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+.metric{background:#f8f8f5;border-radius:8px;padding:12px 14px;text-align:center}
+.metric-val{font-size:26px;font-weight:600;color:#1a1a1a}
+.metric-lbl{font-size:11px;color:#888;margin-top:2px}
+
+/* Candidate cards */
+.cand-list{display:flex;flex-direction:column;gap:10px}
+.cand-card{border:1px solid #e8e8e4;border-radius:10px;padding:14px;cursor:pointer;transition:all .15s}
+.cand-card:hover{border-color:#9FE1CB;background:#fafffe}
+.cand-card.selected{border-color:#1D9E75;background:#E1F5EE}
+.cand-head{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.avatar{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex-shrink:0}
+.cand-info{flex:1}
+.cand-name{font-size:14px;font-weight:600;color:#1a1a1a}
+.cand-role{font-size:12px;color:#888}
+.score-pills{display:flex;gap:5px;flex-wrap:wrap}
+.spill{font-size:11px;padding:2px 9px;border-radius:4px;font-weight:500}
+.spill-match{background:#E1F5EE;color:#085041}
+.spill-interest{background:#E6F1FB;color:#0C447C}
+.spill-combined{background:#EEEDFE;color:#3C3489}
+.skill-row{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
+.chip{font-size:10px;padding:2px 7px;border-radius:4px;background:#f0f0ec;color:#666;border:1px solid #e8e8e4}
+.chip.hit{background:#E1F5EE;color:#085041;border-color:#9FE1CB}
+.explain{font-size:11px;color:#888;margin-top:7px;line-height:1.5}
+.explain b{color:#1D9E75}
+
+/* Chat */
+.chat-wrap{border:1px solid #e8e8e4;border-radius:10px;overflow:hidden;margin-top:12px}
+.chat-header{padding:10px 14px;background:#f8f8f5;border-bottom:1px solid #e8e8e4;display:flex;align-items:center;gap:8px}
+.online-dot{width:8px;height:8px;border-radius:50%;background:#1D9E75;flex-shrink:0}
+.chat-name{font-size:13px;font-weight:600}
+.chat-interest{margin-left:auto;font-size:11px}
+.chat-msgs{height:300px;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;background:white}
+.msg{max-width:75%}
+.msg.ai{align-self:flex-start}
+.msg.cand{align-self:flex-end}
+.msg-label{font-size:10px;color:#aaa;margin-bottom:3px}
+.msg.cand .msg-label{text-align:right}
+.bubble{padding:9px 13px;border-radius:12px;font-size:12px;line-height:1.55}
+.msg.ai .bubble{background:#f5f5f0;border:1px solid #e8e8e4;border-radius:4px 12px 12px 12px;color:#333}
+.msg.cand .bubble{background:#1D9E75;color:white;border-radius:12px 4px 12px 12px}
+.typing-bubble{display:flex;gap:4px;padding:10px 14px}
+.typing-bubble span{width:7px;height:7px;border-radius:50%;background:#ccc;animation:blink 1.2s infinite}
+.typing-bubble span:nth-child(2){animation-delay:.2s}
+.typing-bubble span:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,80%,100%{opacity:.3}40%{opacity:1}}
+.chat-controls{padding:10px 14px;border-top:1px solid #e8e8e4;background:#f8f8f5;display:flex;gap:8px}
+.chat-controls select{flex:1;font-size:12px;padding:6px 10px;border:1px solid #e0e0e0;border-radius:7px;background:white;color:#333;font-family:inherit}
+.chat-controls select:focus{outline:none;border-color:#1D9E75}
+
+/* Engage selector pills */
+.eng-pills{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px}
+.eng-pill{padding:6px 14px;border-radius:20px;border:1.5px solid #e0e0e0;background:white;font-size:12px;cursor:pointer;font-family:inherit;transition:all .15s;color:#555}
+.eng-pill:hover{border-color:#9FE1CB;color:#085041}
+.eng-pill.active{border-color:#1D9E75;background:#E1F5EE;color:#085041;font-weight:500}
+
+/* Shortlist */
+.sl-card{border:1px solid #e8e8e4;border-radius:10px;padding:14px;display:flex;align-items:center;gap:12px;margin-bottom:10px;background:white;transition:border-color .15s}
+.sl-card.top{border-color:#5DCAA5;background:#fafffe}
+.rank-num{font-size:22px;font-weight:700;min-width:28px;text-align:center}
+.rank-num.gold{color:#EF9F27}
+.rank-num.silver{color:#888}
+.rank-num.bronze{color:#D85A30}
+.rank-num.plain{color:#ccc}
+.sl-info{flex:1;min-width:0}
+.sl-name{font-size:14px;font-weight:600;color:#1a1a1a}
+.sl-role{font-size:11px;color:#888;margin-bottom:8px}
+.bar-row{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+.bar-lbl{font-size:11px;color:#999;width:70px;flex-shrink:0}
+.bar-bg{flex:1;height:5px;background:#eee;border-radius:3px;overflow:hidden}
+.bar-fill{height:100%;border-radius:3px}
+.bar-pct{font-size:11px;font-weight:600;min-width:38px;text-align:right}
+.rec{font-size:11px;background:#f5f5f0;border-radius:6px;padding:6px 9px;color:#555;margin-top:8px;border-left:3px solid #1D9E75}
+
+/* Methodology box */
+.method-box{background:#f8f8f5;border-radius:10px;padding:14px 16px;margin-top:16px;border:1px solid #e8e8e4}
+.method-box h4{font-size:13px;font-weight:600;margin-bottom:8px;color:#1a1a1a}
+.method-box p{font-size:12px;color:#666;line-height:1.7;margin-bottom:6px}
+
+/* Interest badge */
+.int-badge{font-size:11px;padding:2px 9px;border-radius:20px;font-weight:500}
+.int-high{background:#E1F5EE;color:#085041}
+.int-med{background:#FAEEDA;color:#633806}
+.int-low{background:#f0f0ec;color:#888}
+
+/* Alert */
+.alert{background:#FAEEDA;border:1px solid #EF9F27;border-radius:8px;padding:10px 14px;font-size:12px;color:#633806;margin-bottom:12px}
+
+/* Empty */
+.empty{text-align:center;padding:2rem;color:#aaa;font-size:13px}
+
+/* Loading spinner inline */
+.spin{display:inline-block;width:14px;height:14px;border:2px solid #ccc;border-top-color:#1D9E75;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#ddd;border-radius:3px}
+
+/* Responsive */
+@media(max-width:600px){
+  .metrics{grid-template-columns:repeat(2,1fr)}
+  .header-right{display:none}
+  .steps{gap:0}
+  .step span:not(.step-num){display:none}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="logo">
+      <svg viewBox="0 0 24 24"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+    </div>
+    <div>
+      <h1>TalentScout AI</h1>
+      <p>AI-powered talent scouting &amp; engagement agent</p>
+    </div>
+    <div class="header-right">
+      <input class="api-key-input" type="password" id="api-key" placeholder="Paste Anthropic API key here..." />
+      <span class="badge">Catalyst Hackathon</span>
+    </div>
+  </div>
+
+  <!-- Steps nav -->
+  <div class="steps">
+    <button class="step active" onclick="goStep(0)" id="s0"><span class="step-num">1</span><span>Parse JD</span></button>
+    <button class="step" onclick="goStep(1)" id="s1"><span class="step-num">2</span><span>Discover</span></button>
+    <button class="step" onclick="goStep(2)" id="s2"><span class="step-num">3</span><span>Engage</span></button>
+    <button class="step" onclick="goStep(3)" id="s3"><span class="step-num">4</span><span>Shortlist</span></button>
+  </div>
+
+  <!-- Panel container -->
+  <div id="panels"></div>
+
+</div>
+
+<script>
+// ─── State ────────────────────────────────────────────────────────────────────
+let state = {
+  step: 0,
+  apiKey: '',
+  jdText: '',
+  parsedJD: null,
+  candidates: [],
+  chatSteps: {},   // candidateId → number of msgs shown
+  interestScores: {}, // candidateId → score
+  chatMessages: {}, // candidateId → [{role,text}]
+  engaged: {},
+};
+
+const SAMPLE_JD = `Senior Full Stack Engineer — TechVentures Hyderabad
+
+We are looking for a Senior Full Stack Engineer with 5+ years of hands-on experience to join our growing product team.
+
+Requirements:
+- 5+ years of experience in full-stack development
+- Expert-level proficiency in React.js and Node.js
+- Strong database skills with PostgreSQL
+- Experience with AWS (EC2, S3, Lambda, RDS)
+- Familiarity with Docker and microservices architecture
+- TypeScript experience is a plus
+- Strong communication and team collaboration skills
+
+Location: Hyderabad (Remote-friendly)
+Compensation: Competitive, based on experience`;
+
+// Mock candidate pool
+const MOCK_CANDIDATES = [
+  {id:1,name:"Arjun Sharma",role:"Senior Full Stack Engineer",exp:6,location:"Hyderabad",remote:false,initials:"AS",color:"#E1F5EE",tc:"#085041",skills:["React","Node.js","PostgreSQL","AWS","Docker","TypeScript","Redis"]},
+  {id:2,name:"Priya Nair",role:"Full Stack Developer",exp:5,location:"Bangalore",remote:true,initials:"PN",color:"#E6F1FB",tc:"#0C447C",skills:["React","Node.js","MySQL","GCP","Kubernetes","Vue.js","MongoDB"]},
+  {id:3,name:"Rahul Mehta",role:"Lead Software Engineer",exp:8,location:"Hyderabad",remote:false,initials:"RM",color:"#EEEDFE",tc:"#3C3489",skills:["React","Node.js","PostgreSQL","AWS","Docker","Microservices","Go"]},
+  {id:4,name:"Sneha Reddy",role:"Backend Engineer",exp:4,location:"Hyderabad",remote:false,initials:"SR",color:"#FAEEDA",tc:"#633806",skills:["Node.js","PostgreSQL","Redis","AWS","Python","FastAPI"]},
+  {id:5,name:"Vikram Iyer",role:"Frontend Engineer",exp:5,location:"Chennai",remote:true,initials:"VI",color:"#FAECE7",tc:"#4A1B0C",skills:["React","TypeScript","GraphQL","Next.js","AWS"]},
+];
+
+// Simulated conversations per candidate
+const CONVOS = {
+  1:[
+    {role:"ai",text:"Hi Arjun! Reaching out about a Senior Full Stack opening — React, Node.js, PostgreSQL, AWS stack. With your 6 years, you look like a strong match. Would you be open to a quick conversation?"},
+    {role:"cand",text:"Thanks for reaching out! Yes, I'm open to exploring. I've been looking for new challenges. What's the company building?",interest:25},
+    {role:"ai",text:"It's a growing B2B SaaS startup in Hyderabad — microservices-heavy architecture on AWS. Your Docker and TypeScript experience is exactly what they need. What matters most to you in your next role?"},
+    {role:"cand",text:"Technical growth is my #1. I'm deeply interested in AWS architecture and microservices ownership. Compensation needs to be fair too — currently at 28 LPA. Is there room for that?",interest:35},
+    {role:"ai",text:"Absolutely — the range is 30–38 LPA + ESOPs. You'd have real ownership over backend architecture, reporting to the CTO. How soon could you start if an offer came through?"},
+    {role:"cand",text:"60 days notice period. Honestly, this sounds exactly like what I've been looking for — I'm very interested in moving forward. Can we set up a call?",interest:40},
+  ],
+  2:[
+    {role:"ai",text:"Hi Priya! Came across your profile — Senior Full Stack opening, React + Node.js, remote-friendly Hyderabad startup. Would you be open to a conversation?"},
+    {role:"cand",text:"Hi, thanks. I'm somewhat open. What kind of company and what's the team size?",interest:10},
+    {role:"ai",text:"12-person engineering team, Series A startup building B2B SaaS. Your GCP experience is interesting too — they're expanding cloud infra. What's your current setup?"},
+    {role:"cand",text:"I'm currently at a mid-size product company. Not actively looking but would consider the right thing. What's the comp ballpark?",interest:15},
+    {role:"ai",text:"28–35 LPA + ESOPs, remote-friendly. Would you be open to a quick 20-min call with the hiring manager?"},
+    {role:"cand",text:"Maybe. Send more details and I'll see. I have a couple of other conversations going on too, so no promises.",interest:10},
+  ],
+  3:[
+    {role:"ai",text:"Hi Rahul! 8 years of full stack + microservices leadership is rare. We have a Lead Engineer role with significant architecture ownership. Interested in learning more?"},
+    {role:"cand",text:"Hello! Always open to exploring. What's the tech stack and team structure?",interest:20},
+    {role:"ai",text:"React, Node.js microservices, PostgreSQL, full AWS with EKS. 12 engineers now, growing to 20. You'd shape the architecture direction — and they're exploring Go for new services."},
+    {role:"cand",text:"The Go part is a big plus — I've been wanting to transition more workloads to it. Who does the engineering lead report to?",interest:35},
+    {role:"ai",text:"Direct report to the CTO, IIT/IIM background, two prior exits. Comp is 35–45 LPA + meaningful ESOP stake. This sounds like a fit?"},
+    {role:"cand",text:"This is very compelling. CTO reporting line + Go roadmap + the comp range — I'm definitely interested. Can we schedule a call this week?",interest:45},
+  ],
+  4:[
+    {role:"ai",text:"Hi Sneha! Strong backend profile — Node.js, PostgreSQL, AWS. We have a hybrid backend-heavy role in Hyderabad. Worth a quick chat?"},
+    {role:"cand",text:"Sure, what's the role exactly? I'm mostly backend so hoping it's not fully full stack.",interest:10},
+    {role:"ai",text:"Primarily backend — your AWS and PostgreSQL skills are the core need. Small amount of light frontend context helps but not required. What's your current level and growth goals?"},
+    {role:"cand",text:"SDE-2, two years here. Looking for a clear path to senior. What's the funding stage and growth trajectory?",interest:20},
+    {role:"ai",text:"Series A, raised $4M last year. Engineering team is growing — clear path to Senior in 12–18 months based on performance. Comp around 20–26 LPA."},
+    {role:"cand",text:"That's a bit lower than I expected, honestly. I'm at 18 LPA now. Not sure the jump is compelling enough. Can you share more about the equity?",interest:10},
+  ],
+  5:[
+    {role:"ai",text:"Hi Vikram! Your React + TypeScript + GraphQL profile caught my eye. Frontend-heavy full stack role, remote option available. Interested?"},
+    {role:"cand",text:"Thanks! Possibly. What's the product?",interest:8},
+    {role:"ai",text:"Complex B2B SaaS dashboards — lots of real-time data, design system ownership, GraphQL API integration. Your Next.js experience is a bonus."},
+    {role:"cand",text:"Somewhat interesting. I'm mostly happy where I am but the design system angle is cool. Where's the team based?",interest:8},
+    {role:"ai",text:"Hyderabad-based but the role is fully remote. Comp is 24–30 LPA. Would you explore a call?"},
+    {role:"cand",text:"I can do a call I guess but I'm not actively looking. Low priority for me right now.",interest:5},
+  ],
+};
+
+// ─── Claude API call ──────────────────────────────────────────────────────────
+async function callClaude(prompt, maxTokens=800) {
+  const key = document.getElementById('api-key').value.trim() || state.apiKey;
+  if(!key) throw new Error('No API key');
+  const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    method:'POST',
+    headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:maxTokens,messages:[{role:'user',content:prompt}]})
+  });
+  if(!resp.ok) { const e = await resp.json(); throw new Error(e.error?.message || 'API error'); }
+  const data = await resp.json();
+  return data.content[0].text;
+}
+
+// ─── Step routing ─────────────────────────────────────────────────────────────
+function goStep(n) {
+  state.step = n;
+  document.querySelectorAll('.step').forEach((el,i)=>{
+    el.className = 'step' + (i===n?' active':i<n?' done':'');
+  });
+  render();
+}
+
+function render() {
+  const p = document.getElementById('panels');
+  if(state.step===0) p.innerHTML = renderJD();
+  else if(state.step===1) p.innerHTML = renderDiscover();
+  else if(state.step===2) p.innerHTML = renderEngage();
+  else if(state.step===3) p.innerHTML = renderShortlist();
+  attachEvents();
+}
+
+// ─── Step 1: Parse JD ────────────────────────────────────────────────────────
+function renderJD() {
+  const parsed = state.parsedJD;
+  return `
+<div class="panel">
+  <div class="panel-title">Job description input</div>
+  <div class="panel-sub">Paste a raw JD — the AI will extract skills, experience, location, and role requirements</div>
+  <textarea id="jd-text" rows="9" placeholder="Paste your job description here...">${state.jdText || SAMPLE_JD}</textarea>
+  <div class="btn-row">
+    <button class="btn btn-primary" id="parse-btn">Analyze with AI</button>
+    <button class="btn btn-secondary" id="sample-btn">Load sample JD</button>
+  </div>
+  <div id="parse-progress" style="display:none" class="progress-wrap">
+    <div class="progress-bar"><div class="progress-fill" id="pfill" style="width:0%"></div></div>
+    <div class="progress-label" id="plbl">Analyzing...</div>
+  </div>
+  ${parsed ? `
+  <div style="margin-top:18px">
+    <div class="panel-title" style="margin-bottom:8px">Extracted requirements</div>
+    <div class="tags">
+      <span class="tag tag-role">${parsed.role}</span>
+      <span class="tag tag-exp">${parsed.exp_years}+ years exp</span>
+      <span class="tag tag-loc">${parsed.location}${parsed.remote_ok?' · Remote OK':''}</span>
+      ${parsed.skills.map(s=>`<span class="tag tag-skill">${s}</span>`).join('')}
+    </div>
+    <div style="background:#f5f5f0;border-radius:8px;padding:10px 13px;font-size:12px;color:#555;line-height:1.7;margin-top:10px">
+      ${parsed.summary}
+    </div>
+    <div class="btn-row" style="margin-top:14px">
+      <button class="btn btn-primary" onclick="goStep(1);discoverCandidates()">Discover matching candidates →</button>
+    </div>
+  </div>` : ''}
+</div>`;
+}
+
+async function parseJD() {
+  const text = document.getElementById('jd-text').value.trim();
+  if(!text) { alert('Please enter a job description'); return; }
+  state.jdText = text;
+
+  const btn = document.getElementById('parse-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span>Analyzing...';
+  document.getElementById('parse-progress').style.display = 'block';
+
+  const steps = [[20,'Extracting skills...'],[45,'Parsing experience requirements...'],[70,'Identifying location...'],[90,'Building criteria...'],[100,'Complete!']];
+  let i=0;
+  const iv = setInterval(()=>{
+    if(i>=steps.length){clearInterval(iv);return;}
+    document.getElementById('pfill').style.width=steps[i][0]+'%';
+    document.getElementById('plbl').textContent=steps[i][1];
+    i++;
+  },350);
+
+  try {
+    const key = document.getElementById('api-key').value.trim();
+    if(key) {
+      // Real AI parse
+      const raw = await callClaude(`Extract structured info from this job description. Return ONLY valid JSON, no markdown.
+
+JD:
+${text}
+
+Return exactly:
+{"skills":["skill1","skill2"],"exp_years":5,"role":"Job Title","location":"City","remote_ok":true,"summary":"2-sentence summary of key requirements"}`);
+      const clean = raw.replace(/\`\`\`json|\`\`\`/g,'').trim();
+      state.parsedJD = JSON.parse(clean);
+    } else {
+      // Demo fallback
+      await new Promise(r=>setTimeout(r,2000));
+      state.parsedJD = {
+        skills:["React","Node.js","PostgreSQL","AWS","Docker","TypeScript","Microservices"],
+        exp_years:5, role:"Senior Full Stack Engineer",
+        location:"Hyderabad", remote_ok:true,
+        summary:"Seeking a Senior Full Stack Engineer with 5+ years in React and Node.js, strong PostgreSQL and AWS skills, and experience with Docker and microservices. Remote-friendly role in Hyderabad with competitive compensation."
+      };
+    }
+    clearInterval(iv);
+    document.getElementById('pfill').style.width='100%';
+    await new Promise(r=>setTimeout(r,300));
+    render();
+  } catch(e) {
+    clearInterval(iv);
+    btn.disabled=false;
+    btn.innerHTML='Analyze with AI';
+    alert('Error: '+e.message+'\n\nTip: Add your Anthropic API key above, or use the demo mode by clicking Analyze without a key.');
+  }
+}
+
+// ─── Step 2: Discover ────────────────────────────────────────────────────────
+function renderDiscover() {
+  const jd = state.parsedJD;
+  const hasData = state.candidates.length > 0;
+  const avg = hasData ? Math.round(state.candidates.reduce((a,c)=>a+c.matchScore,0)/state.candidates.length) : 0;
+
+  return `
+<div class="panel">
+  <div class="panel-title">Candidate discovery & matching</div>
+  <div class="panel-sub">Scanning talent pool and scoring against parsed JD requirements with explainability</div>
+  ${!jd ? `<div class="alert">Please parse a job description in Step 1 first.</div>
+  <button class="btn btn-secondary" onclick="goStep(0)">← Back to Parse JD</button>` : ''}
+  ${jd && !hasData ? `
+  <div id="disc-progress" style="display:none" class="progress-wrap">
+    <div class="progress-bar"><div class="progress-fill" id="dfill" style="width:0%"></div></div>
+    <div class="progress-label" id="dlbl">Scanning profiles...</div>
+  </div>
+  <button class="btn btn-primary" id="disc-btn" onclick="discoverCandidates()">Scan talent pool</button>` : ''}
+  ${hasData ? `
+  <div class="metrics">
+    <div class="metric"><div class="metric-val">247</div><div class="metric-lbl">Profiles scanned</div></div>
+    <div class="metric"><div class="metric-val">${state.candidates.length}</div><div class="metric-lbl">Strong matches</div></div>
+    <div class="metric"><div class="metric-val">${avg}%</div><div class="metric-lbl">Avg match score</div></div>
+  </div>
+  <div class="cand-list">
+    ${state.candidates.map((c,i)=>`
+    <div class="cand-card" id="cc${c.id}" onclick="selectAndEngage(${c.id})">
+      <div class="cand-head">
+        <div class="avatar" style="background:${c.color};color:${c.tc}">${c.initials}</div>
+        <div class="cand-info">
+          <div class="cand-name">${c.name}</div>
+          <div class="cand-role">${c.role} · ${c.exp} yrs · ${c.location}${c.remote?' (Remote OK)':''}</div>
+        </div>
+        <div class="score-pills">
+          <span style="font-size:11px;color:#aaa;padding:2px 7px;background:#f0f0ec;border-radius:4px">#${i+1}</span>
+          <span class="spill spill-match">Match ${c.matchScore}%</span>
+        </div>
+      </div>
+      <div class="skill-row">
+        ${c.matched.map(s=>`<span class="chip hit">${s}</span>`).join('')}
+        ${c.unmatched.map(s=>`<span class="chip">${s}</span>`).join('')}
+      </div>
+      <div class="explain">Matched <b>${c.matched.length}/${jd.skills.length} required skills</b> · ${c.exp >= jd.exp_years ? 'Experience meets threshold' : 'Below experience threshold'} · ${c.location===jd.location?'Location match':c.remote&&jd.remote_ok?'Remote match':'Partial location'}</div>
+    </div>`).join('')}
+  </div>
+  <div class="btn-row" style="margin-top:14px">
+    <button class="btn btn-primary" onclick="goStep(2)">Start conversational outreach →</button>
+  </div>` : ''}
+</div>`;
+}
+
+function scoreCandidate(c, jd) {
+  const jdSkillsLow = jd.skills.map(s=>s.toLowerCase());
+  const matched = c.skills.filter(s=>jdSkillsLow.includes(s.toLowerCase()));
+  const unmatched = c.skills.filter(s=>!jdSkillsLow.includes(s.toLowerCase()));
+  const skillScore = Math.round((matched.length/Math.max(jd.skills.length,1))*50);
+  const expDiff = c.exp - jd.exp_years;
+  const expScore = expDiff>=0?30:expDiff===-1?20:Math.max(0,10+expDiff*5);
+  const locScore = c.location.toLowerCase()===jd.location.toLowerCase()?10:c.remote&&jd.remote_ok?7:0;
+  const roleWords = new Set(jd.role.toLowerCase().split(' '));
+  const candWords = new Set(c.role.toLowerCase().split(' '));
+  const roleScore = Math.min(10,[...roleWords].filter(w=>candWords.has(w)).length*4);
+  return {matched,unmatched,matchScore:Math.min(100,skillScore+expScore+locScore+roleScore)};
+}
+
+async function discoverCandidates() {
+  if(!state.parsedJD) { goStep(0); return; }
+  const prog = document.getElementById('disc-progress');
+  const btn = document.getElementById('disc-btn');
+  if(prog) prog.style.display='block';
+  if(btn) { btn.disabled=true; btn.innerHTML='<span class="spin"></span>Scanning...'; }
+
+  const steps=[[15,'Scanning LinkedIn profiles...'],[30,'Applying skill matcher...'],[50,'Computing experience scores...'],[65,'Checking location preferences...'],[80,'Ranking candidates...'],[95,'Generating explainability...'],[100,'Done!']];
+  let i=0;
+  const iv=setInterval(()=>{
+    if(i>=steps.length){clearInterval(iv);return;}
+    const df=document.getElementById('dfill');
+    const dl=document.getElementById('dlbl');
+    if(df) df.style.width=steps[i][0]+'%';
+    if(dl) dl.textContent=steps[i][1];
+    i++;
+  },400);
+
+  await new Promise(r=>setTimeout(r,3000));
+  clearInterval(iv);
+
+  state.candidates = MOCK_CANDIDATES.map(c=>{
+    const s=scoreCandidate(c,state.parsedJD);
+    return {...c,...s};
+  }).sort((a,b)=>b.matchScore-a.matchScore);
+
+  render();
+}
+
+function selectAndEngage(id) {
+  goStep(2);
+  setTimeout(()=>loadChat(id),50);
+}
+
+// ─── Step 3: Engage ──────────────────────────────────────────────────────────
+let activeCandId = null;
+
+function renderEngage() {
+  const cands = state.candidates.length ? state.candidates : MOCK_CANDIDATES;
+  const active = activeCandId || (cands[0] && cands[0].id);
+  const c = cands.find(x=>x.id===active);
+  const msgs = state.chatMessages[active] || [];
+  const interest = state.interestScores[active] || 0;
+  const convo = CONVOS[active] || [];
+  const step = state.chatSteps[active] || 0;
+  const remaining = convo.slice(step).filter(m=>m.role==='ai');
+
+  return `
+<div class="panel">
+  <div class="panel-title">Conversational outreach simulation</div>
+  <div class="panel-sub">AI engages candidates and scores genuine interest from conversation signals in real time</div>
+  <div class="eng-pills">
+    ${cands.map(x=>`<button class="eng-pill${x.id===active?' active':''}" onclick="loadChat(${x.id})">${x.initials} ${x.name.split(' ')[0]}</button>`).join('')}
+  </div>
+  ${c ? `
+  <div class="chat-wrap">
+    <div class="chat-header">
+      <div class="online-dot"></div>
+      <span class="chat-name">${c.name} — ${c.role}</span>
+      <span class="chat-interest">${interest>0?`<span class="int-badge ${interest>=60?'int-high':interest>=30?'int-med':'int-low'}">Interest ${Math.min(100,interest)}%</span>`:''}</span>
+    </div>
+    <div class="chat-msgs" id="chat-msgs">
+      ${msgs.length===0 ? '<div class="empty">Click "Start outreach" to begin AI-powered conversation</div>' : ''}
+      ${msgs.map(m=>`
+      <div class="msg ${m.role}">
+        <div class="msg-label">${m.role==='ai'?'TalentScout AI':'Candidate'}</div>
+        <div class="bubble">${m.text}</div>
+      </div>`).join('')}
+    </div>
+    <div class="chat-controls">
+      <select id="msg-sel">
+        ${remaining.length===0 && step===0 ? `<option value="start">Send opening message</option>` : ''}
+        ${remaining.map((m,i)=>`<option value="${step+i*2}">${m.text.substring(0,55)}...</option>`).join('')}
+        ${remaining.length===0 && step>0 ? `<option value="">Conversation complete</option>` : ''}
+      </select>
+      <button class="btn btn-secondary" style="white-space:nowrap" onclick="autoEngage()">Auto-run ↗</button>
+      <button class="btn btn-primary" id="send-btn" onclick="sendNext()" ${remaining.length===0&&step>0?'disabled':''}>Send</button>
+    </div>
+  </div>
+  <p style="font-size:11px;color:#aaa;margin-top:8px">Interest score derived from response enthusiasm, questions asked, salary engagement, and stated availability</p>` : '<div class="empty">No candidates loaded — go to Step 2 first</div>'}
+  <div class="btn-row" style="margin-top:14px">
+    <button class="btn btn-primary" onclick="goStep(3);buildShortlist()">Generate ranked shortlist →</button>
+  </div>
+</div>`;
+}
+
+function loadChat(id) {
+  activeCandId = id;
+  if(!state.chatMessages[id]) state.chatMessages[id] = [];
+  if(!state.chatSteps[id]) state.chatSteps[id] = 0;
+  if(!state.interestScores[id]) state.interestScores[id] = 0;
+  render();
+  scrollChat();
+}
+
+function scrollChat() {
+  setTimeout(()=>{const m=document.getElementById('chat-msgs');if(m)m.scrollTop=m.scrollHeight;},50);
+}
+
+function sendNext() {
+  const id = activeCandId;
+  if(!id) return;
+  const convo = CONVOS[id] || [];
+  const step = state.chatSteps[id] || 0;
+  if(step >= convo.length) return;
+
+  const msg = convo[step];
+  if(msg.role !== 'ai') return;
+
+  if(!state.chatMessages[id]) state.chatMessages[id]=[];
+  state.chatMessages[id].push({role:'ai',text:msg.text});
+  state.chatSteps[id] = step+1;
+  render();
+  scrollChat();
+
+  // Show typing then candidate response
+  const msgs = document.getElementById('chat-msgs');
+  const typing = document.createElement('div');
+  typing.className='msg cand';
+  typing.id='typing';
+  typing.innerHTML='<div class="bubble typing-bubble"><span></span><span></span><span></span></div>';
+  if(msgs) { msgs.appendChild(typing); msgs.scrollTop=msgs.scrollHeight; }
+
+  setTimeout(()=>{
+    const t=document.getElementById('typing');
+    if(t) t.remove();
+    const nextStep = state.chatSteps[id];
+    if(nextStep < convo.length && convo[nextStep].role==='cand') {
+      const r = convo[nextStep];
+      state.chatMessages[id].push({role:'cand',text:r.text});
+      state.interestScores[id] = Math.min(100,(state.interestScores[id]||0)+r.interest);
+      state.chatSteps[id] = nextStep+1;
+      state.engaged[id] = true;
+    }
+    render();
+    scrollChat();
+  }, 1400);
+}
+
+async function autoEngage() {
+  const id = activeCandId;
+  if(!id) return;
+  const convo = CONVOS[id] || [];
+  async function step() {
+    if((state.chatSteps[id]||0) >= convo.length) { render(); return; }
+    const msg = convo[state.chatSteps[id]];
+    if(!state.chatMessages[id]) state.chatMessages[id]=[];
+    state.chatMessages[id].push({role:msg.role==='ai'?'ai':'cand',text:msg.text});
+    if(msg.role==='cand') { state.interestScores[id]=Math.min(100,(state.interestScores[id]||0)+msg.interest); state.engaged[id]=true; }
+    state.chatSteps[id]=(state.chatSteps[id]||0)+1;
+    render(); scrollChat();
+    await new Promise(r=>setTimeout(r,msg.role==='ai'?800:1300));
+    step();
+  }
+  step();
+}
+
+// ─── Step 4: Shortlist ────────────────────────────────────────────────────────
+function renderShortlist() {
+  const cands = state.candidates.length ? state.candidates : MOCK_CANDIDATES.map(c=>({...c,...scoreCandidate(c,state.parsedJD||{skills:["React","Node.js","PostgreSQL","AWS","Docker"],exp_years:5,location:"Hyderabad",remote_ok:true})}));
+
+  const ranked = [...cands].map(c=>{
+    const interest = Math.min(100, state.interestScores[c.id]||0);
+    const combined = Math.round(0.6*c.matchScore + 0.4*interest);
+    let rec;
+    if(combined>=80) rec='Strong hire — high match and genuine interest. Move to technical round immediately.';
+    else if(combined>=65) rec='Good fit — schedule a screening call this week.';
+    else if(combined>=50) rec='Moderate fit — worth a conversation if pipeline is thin.';
+    else rec='Weak fit — deprioritize unless options are scarce.';
+    return {...c,interest,combined,rec};
+  }).sort((a,b)=>b.combined-a.combined);
+
+  const top = ranked[0];
+  const rankIcons=['①','②','③','④','⑤'];
+  const rankClasses=['gold','silver','bronze','plain','plain'];
+
+  return `
+<div class="panel">
+  <div class="panel-title">Ranked candidate shortlist</div>
+  <div class="panel-sub">Two-axis scoring: Match Score (60%) + Interest Score (40%) = Combined rank</div>
+  <div class="metrics">
+    <div class="metric"><div class="metric-val">${ranked.length}</div><div class="metric-lbl">Candidates ranked</div></div>
+    <div class="metric"><div class="metric-val">${ranked.filter(c=>c.interest>0).length}</div><div class="metric-lbl">Engaged</div></div>
+    <div class="metric"><div class="metric-val">${top?top.combined+'%':'-'}</div><div class="metric-lbl">Top combined score</div></div>
+  </div>
+  ${ranked.map((c,i)=>`
+  <div class="sl-card ${i===0?'top':''}">
+    <div class="rank-num ${rankClasses[i]}">${rankIcons[i]}</div>
+    <div class="avatar" style="background:${c.color};color:${c.tc};width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0">${c.initials}</div>
+    <div class="sl-info">
+      <div class="sl-name">${c.name}</div>
+      <div class="sl-role">${c.role} · ${c.exp} yrs · ${c.location}</div>
+      <div class="bar-row">
+        <span class="bar-lbl">Match (60%)</span>
+        <div class="bar-bg"><div class="bar-fill" style="width:${c.matchScore}%;background:#1D9E75"></div></div>
+        <span class="bar-pct" style="color:#1D9E75">${c.matchScore}%</span>
+      </div>
+      <div class="bar-row">
+        <span class="bar-lbl">Interest (40%)</span>
+        <div class="bar-bg"><div class="bar-fill" style="width:${c.interest}%;background:#378ADD"></div></div>
+        <span class="bar-pct" style="color:#378ADD">${c.interest>0?c.interest+'%':'–'}</span>
+      </div>
+      <div class="bar-row">
+        <span class="bar-lbl">Combined</span>
+        <div class="bar-bg"><div class="bar-fill" style="width:${c.combined}%;background:#7F77DD"></div></div>
+        <span class="bar-pct" style="color:#7F77DD;font-weight:700">${c.combined}%</span>
+      </div>
+      <div class="rec">${c.rec}</div>
+    </div>
+  </div>`).join('')}
+  <div class="method-box">
+    <h4>Scoring methodology</h4>
+    <p><strong>Match Score (60%)</strong>: Skill overlap with JD requirements, experience vs threshold, location match, role title alignment. Weighted formula across four dimensions.</p>
+    <p><strong>Interest Score (40%)</strong>: Derived from conversation signals — enthusiasm language, questions depth, salary engagement, availability statements, and explicit next-step requests.</p>
+    <p><strong>Combined</strong>: 0.6 × Match + 0.4 × Interest, normalized 0–100. Candidates not yet engaged fall back to Match Score only.</p>
+  </div>
+</div>`;
+}
+
+function buildShortlist() {
+  render();
+}
+
+// ─── Events ───────────────────────────────────────────────────────────────────
+function attachEvents() {
+  const pb = document.getElementById('parse-btn');
+  if(pb) pb.onclick = parseJD;
+  const sb = document.getElementById('sample-btn');
+  if(sb) sb.onclick = ()=>{ document.getElementById('jd-text').value=SAMPLE_JD; };
+}
+
+// Init
+render();
+</script>
+</body>
+</html>
